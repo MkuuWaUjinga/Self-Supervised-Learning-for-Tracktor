@@ -421,7 +421,7 @@ class Tracker:
                                     loss = criterion_regressor(box_pred_val,
                                                      annotated_likely_ground_truth_bounding_box.repeat(128, 1))
                                     if checkpoint == 0:
-                                        base_loss = loss
+                                        base_loss = loss.item()
                                     else:
                                         track.plotter.plot('loss', 'val {}'.format(checkpoint), 'Regression Loss track {}'.format(i),
                                                        track.frames_since_active, loss.item() - base_loss)
