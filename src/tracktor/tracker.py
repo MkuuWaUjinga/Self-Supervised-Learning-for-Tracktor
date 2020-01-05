@@ -425,6 +425,9 @@ class Tracker:
                                     else:
                                         track.plotter.plot('loss', 'val {}'.format(checkpoint), 'Regression Loss track {}'.format(i),
                                                        track.frames_since_active, loss.item() - base_loss)
+                                        track.plotter.plot('loss', 'val {}'.format(checkpoint),
+                                                           'Baseline',
+                                                           track.frames_since_active, 0)
 
                 if keep.nelement() > 0:
                     if self.do_reid:
