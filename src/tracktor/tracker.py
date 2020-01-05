@@ -420,7 +420,7 @@ class Tracker:
 
                                     loss = criterion_regressor(box_pred_val,
                                                      annotated_likely_ground_truth_bounding_box.repeat(128, 1))
-                                    track.plotter.plot('loss', 'val {}'.format(checkpoint), 'Class Loss track {}'.format(i),
+                                    track.plotter.plot('loss', 'val {}'.format(checkpoint), 'Regression Loss track {}'.format(i),
                                                        track.frames_since_active, loss.item())
 
                 if keep.nelement() > 0:
