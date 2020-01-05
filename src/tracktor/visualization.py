@@ -48,7 +48,8 @@ class VisdomLinePlotter(object):
                 legend=[split_name],
                 title=title_name,
                 xlabel='Epochs',
-                ylabel=var_name
+                ylabel=var_name,
+                layoutopts=dict(plotly=dict(yaxis=dict(range=[-0.1, 0.1])))
             ))
         else:
             self.viz.line(X=np.array([x]), Y=np.array([y]), env=self.env, win=self.plots[var_name], name=split_name,
