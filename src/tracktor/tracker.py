@@ -543,11 +543,11 @@ class Tracker:
                         if self.finetuning_config["validation_over_time"]:
                             if np.mod(track.frames_since_active, self.finetuning_config["validation_interval"]) == 0:
                                 for checkpoint, models in track.checkpoints.items():
-                                    test_rois = track.generate_training_set(self.finetuning_config["max_displacement"],
+                                    test_rois = track.generate_training_set_regression(track.pos, self.finetuning_config["max_displacement"],
                                                                             batch_size=128)
                                     box_pred_val, _ = self.obj_detect.predict_boxes(test_rois[:, 0:4],
-                                                                                    box_head=models[0],
-                                                                                    box_predictor=models[1])
+                                                                                    box_head_regression=models[0],
+                                                                                    box_predictor_regression=models[1])
                                     annotated_boxes = annotated_boxes.to(device)
                                     index_likely_bounding_box = torch.argmax(box_iou(track.pos, annotated_boxes))
                                     annotated_likely_ground_truth_bounding_box = annotated_boxes[

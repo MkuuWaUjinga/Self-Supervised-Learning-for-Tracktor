@@ -22,4 +22,6 @@ tracktor:
       'replacement_probability': 0.5
       feature_collection_interval: 1
       'max_displacement': 0.01
+      'validation_over_time': True
+      'checkpoint_interval': 3
   'output_subdir': '1'

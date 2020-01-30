@@ -3,6 +3,7 @@ from collections import deque
 import numpy as np
 import torch
 from torch.nn import functional as F
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.models.detection.transform import resize_boxes
 
 from tracktor.training_set_generation import replicate_and_randomize_boxes
@@ -244,7 +245,25 @@ class Track(object):
             validation_boxes = self.generate_training_set_regression(self.pos, finetuning_config["max_displacement"],
                                                                          finetuning_config["val_batch_size"]).to(device)
         print("Finetuning track {}".format(self.id))
+        save_state_box_predictor = FastRCNNPredictor(1024, 2).to(device)
+        save_state_box_predictor.load_state_dict(self.box_predictor_regression.state_dict())
+
+        self.checkpoints[0] = [box_head_regression, save_state_box_predictor]
+
         for i in range(int(finetuning_config["iterations"])):
+
+            if finetuning_config["validation_over_time"]:
+                if not self.plotter:
+                    self.plotter = VisdomLinePlotter()
+                    print("Making Plotter")
+                if np.mod(i + 1, finetuning_config["checkpoint_interval"]) == 0:
+                    self.box_predictor_regression.eval()
+                    save_state_box_predictor = FastRCNNPredictor(1024, 2).to(device)
+                    save_state_box_predictor.load_state_dict(self.box_predictor_regression.state_dict())
+                    self.checkpoints[i + 1] = [self.box_head_regression, save_state_box_predictor]
+                    # input('Checkpoints are the same: {} {}'.format(i+1, Tracker.compare_weights(self.box_predictor_regression, self.checkpoints[0][1])))
+                    self.box_predictor_regression.train()
+
             optimizer.zero_grad()
             loss = self.forward_pass_for_regressor_training(training_boxes, fpn_features, bbox_pred_decoder, eval=False)
             print('Finished iteration {} --- Loss {}'.format(i, loss.item()))
