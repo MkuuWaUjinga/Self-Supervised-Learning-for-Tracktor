@@ -522,12 +522,23 @@ class Tracker:
                                             include_previous_frames=True)
 
                         if self.finetuning_config["for_tracking"] and self.finetuning_config["finetune_repeatedly"]:
-                            box_head_copy = self.get_box_head()
-                            box_predictor_copy = self.get_box_predictor()
                             if np.mod(track.frames_since_active, self.finetuning_config["finetuning_interval"]) == 0:
+                                box_head_copy = self.get_box_head()
+                                box_predictor_copy = self.get_box_predictor()
                                 track.finetune_classification(self.finetuning_config, box_head_copy, box_predictor_copy,
                                                               early_stopping=self.finetuning_config[
                                                                   'early_stopping_classifier'])
+
+                        if self.finetuning_config["finetune_regression"] and self.finetuning_config["finetune_repeatedly"]:
+                            if np.mod(track.frames_since_active, self.finetuning_config["finetuning_interval"]) == 0:
+                                box_head_copy_regression = self.get_box_head()
+                                box_predictor_copy_regression = self.get_box_predictor()
+
+                                track.finetune_regression(self.finetuning_config, self.obj_detect.fpn_features,
+                                                          box_head_copy_regression, box_predictor_copy_regression,
+                                                          self.obj_detect.roi_heads.box_coder.decode,
+                                                          early_stopping=self.finetuning_config[
+                                                              'early_stopping_classifier'])
 
                 if keep.nelement() > 0:
                     if self.do_reid:
