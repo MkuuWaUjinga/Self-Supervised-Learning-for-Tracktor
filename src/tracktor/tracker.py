@@ -41,7 +41,7 @@ class Tracker:
         self.number_of_iterations = tracker_cfg['number_of_iterations']
         self.termination_eps = tracker_cfg['termination_eps']
         self.finetuning_config = tracker_cfg['finetuning']
-        if self.finetuning_config["for_tracking"] or self.finetuning_config["for_reid"]:
+        if self.finetuning_config["for_tracking"] or self.finetuning_config["for_reid"] or self.finetuning_config["finetune_regression"]:
             self.bbox_predictor_weights = self.obj_detect.roi_heads.box_predictor.state_dict()
             self.bbox_head_weights = self.obj_detect.roi_heads.box_head.state_dict()
 
@@ -104,6 +104,13 @@ class Tracker:
                                               box_predictor_copy_for_classifier,
                                               early_stopping=self.finetuning_config['early_stopping_classifier'])
 
+            if self.finetuning_config["finetune_regression"]:
+                box_head_copy_regression = self.get_box_head()
+                box_predictor_copy_regression = self.get_box_predictor()
+                track.finetune_regression(self.finetuning_config, self.obj_detect.fpn_features,
+                                              box_head_copy_regression, box_predictor_copy_regression,
+                                              early_stopping=self.finetuning_config['early_stopping_classifier'])
+
             self.tracks.append(track)
 
         self.track_num += num_new
@@ -131,7 +138,15 @@ class Tracker:
                 assert track.box_head_classification is not None
                 assert track.box_predictor_classification is not None
 
-                box, score = self.obj_detect.predict_boxes(track.pos,
+                if self.finetuning_config["finetune_regression"]:
+                    box, score = self.obj_detect.predict_boxes(track.pos,
+                                                               box_head_regression=track.box_head_regression,
+                                                               box_predictor_regression=track.box_predictor_regression,
+                                                               box_head_classification=track.box_head_classification,
+                                                               box_predictor_classification=track.box_predictor_classification)
+
+                else:
+                    box, score = self.obj_detect.predict_boxes(track.pos,
                                                            box_head_classification=track.box_head_classification,
                                                            box_predictor_classification=track.box_predictor_classification)
 
@@ -153,6 +168,29 @@ class Tracker:
                                           score_by_other_classifier, train_positive=is_target)
             scores = torch.cat(scores)
             pos = torch.cat(pos)
+
+        elif self.finetuning_config["finetune_regression"]:
+            scores = []
+            pos = []
+
+            for track in self.tracks:
+                # Regress with finetuned bbox head for each track
+                assert track.box_head_regression is not None
+                assert track.box_predictor_regression is not None
+
+                box, score = self.obj_detect.predict_boxes(track.pos,
+                                                           box_head_regression=track.box_head_regression,
+                                                           box_predictor_regression=track.box_predictor_regression)
+
+                if plot_compare:
+                    box_no_finetune, score_no_finetune = self.obj_detect.predict_boxes(track.pos)
+                    plot_compare_bounding_boxes(box, box_no_finetune, blob['img'])
+                scores.append(score)
+                bbox = clip_boxes_to_image(box, blob['img'].shape[-2:])
+                pos.append(bbox)
+            scores = torch.cat(scores)
+            pos = torch.cat(pos)
+
         else:
             pos = self.get_pos()
             boxes, scores = self.obj_detect.predict_boxes(pos)

@@ -200,3 +200,53 @@ class Track(object):
 
         # dets = torch.cat((self.pos, additional_dets))
         # print(self.forward_pass(dets, box_roi_pool, fpn_features, scores=True))
+
+    def forward_pass_for_regressor_training(self, boxes, fpn_features, eval=False):
+        if eval:
+            self.box_predictor_regression.eval()
+            self.box_head_regression.eval()
+        boxes_resized = resize_boxes(boxes[:, 0:4], self.im_info, self.transformed_image_size[0])
+        proposals = [boxes_resized]
+        with torch.no_grad():
+            roi_pool_feat = self.box_roi_pool(fpn_features, proposals, self.im_info)
+        # Only train the box prediction head
+        with torch.no_grad():
+            feat = self.box_head_regression(roi_pool_feat)
+        _, regressed_boxes = self.box_predictor_regression(feat)
+        print(boxes[:3, :])
+        print(regressed_boxes[:3, :])
+        input()
+        loss = F.mse_loss(boxes, regressed_boxes[:, 0:4]) # TODO L2 loss
+        if eval:
+            self.box_predictor_regression.train()
+            self.box_head_regression.train()
+        return loss
+
+    def finetune_regression(self, finetuning_config, fpn_features, box_head_regression, box_predictor_regression, early_stopping=False):
+        self.box_head_regression = box_head_regression
+        self.box_predictor_regression = box_predictor_regression
+        self.box_predictor_regression.train()
+        self.box_head_regression.train()
+        optimizer = torch.optim.Adam(
+            list(self.box_predictor_regression.parameters()), lr=float(finetuning_config["learning_rate"]))
+        #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, gamma=finetuning_config['gamma'])
+
+        training_boxes = self.generate_training_set_regression(self.pos,
+                                                                  finetuning_config["max_displacement"],
+                                                                  batch_size=finetuning_config["batch_size"]).to(device)
+
+        if finetuning_config["validate"]:
+            if not self.plotter:
+                self.plotter = VisdomLinePlotter(env_name='training')
+            validation_boxes = self.generate_training_set_regression(self.pos, finetuning_config["max_displacement"],
+                                                                         finetuning_config["val_batch_size"]).to(device)
+        print("Finetuning track {}".format(self.id))
+        for i in range(int(finetuning_config["iterations"])):
+            optimizer.zero_grad()
+            loss = self.forward_pass_for_regressor_training(training_boxes, fpn_features, eval=False)
+            print('Finished iteration {} --- Loss {}'.format(i, loss.item()))
+            loss.backward()
+            optimizer.step()
+            #scheduler.step()
+        self.box_predictor_regression.eval()
+        self.box_head_regression.eval()
