@@ -219,10 +219,6 @@ class Track(object):
         regressed_boxes = bbox_pred_decoder(bbox_pred_offset, proposals)
         regressed_boxes = regressed_boxes[:, 1:].squeeze(dim=1)
 
-        print(scaled_gt_box[:3, :])
-        print(regressed_boxes[:3, :])
-        input()
-
         loss = F.mse_loss(scaled_gt_box, regressed_boxes[:, 0:4]) # TODO L2 loss
         if eval:
             self.box_predictor_regression.train()
