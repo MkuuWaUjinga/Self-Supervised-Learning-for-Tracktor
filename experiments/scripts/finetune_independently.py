@@ -234,14 +234,23 @@ def reid_exp(finetuning_config, obj_detect_weights):
             f1_scores.append(f1_score)
 
         print("average f1 score {}".format(np.mean(f1_scores)))
-        true_positives = np.sum(reid_results == 1)
-        false_positives = np.sum(reid_results == 0)
-        precision = true_positives / (true_positives + false_positives)
+        precision = compute_precision(reid_results)
         print(f"precision: {precision}")
         plotter = VisdomLinePlotter(env_name='finetune_independently', xlabel="number of positive examples")
         for frame_number in f1_per_frame_number.keys():
             plotter.plot('avg f1 score', "f1 score", 'positive examples vs. avg f1 score', frame_number,
                          np.mean(f1_per_frame_number[frame_number]))
+
+
+def compute_precision(reid_results):
+    true_positives = np.sum(reid_results == 1)
+    false_positives = np.sum(reid_results == 0)
+    try:
+        precision = true_positives / (true_positives + false_positives)
+    except RuntimeWarning:
+        print('There are no positives for this metric! Precision cannot be computed.')
+    return precision
+
 
 def frame_number_train_exp(finetuning_config, obj_detect_weights):
     f1_scores = []
@@ -270,9 +279,7 @@ def frame_number_train_exp(finetuning_config, obj_detect_weights):
             f1_scores.append(f1_score)
             reid_results.append(reid_result)
     print("average f1 score {}".format(np.mean(f1_scores)))
-    true_positives = np.sum(reid_results == 1)
-    false_positives = np.sum(reid_results == 0)
-    precision = true_positives / (true_positives + false_positives)
+    precision = compute_precision(reid_results)
     print(f"precision: {precision}")
     plotter = VisdomLinePlotter(env_name='finetune_independently', xlabel="number of positive examples")
     for frame_number in f1_per_frame_number.keys():
@@ -298,9 +305,7 @@ def test_multiple_tracks(finetuning_config, obj_detect_weights):
             continue
     print("Track id with lowest score: {}, score: {}".format(track_ids[np.argmin(f1_scores)], np.min(f1_scores)))
     print("average f1 score {}".format(np.mean(f1_scores)))
-    true_positives = np.sum(reid_results == 1)
-    false_positives = np.sum(reid_results == 0)
-    precision = true_positives / (true_positives + false_positives)
+    precision = compute_precision(reid_results)
     print(f"precision: {precision}")
 
 
