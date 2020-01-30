@@ -201,7 +201,7 @@ class Track(object):
         # dets = torch.cat((self.pos, additional_dets))
         # print(self.forward_pass(dets, box_roi_pool, fpn_features, scores=True))
 
-    def forward_pass_for_regressor_training(self, boxes, fpn_features, eval=False):
+    def forward_pass_for_regressor_training(self, boxes, fpn_features, bbox_pred_decoder, eval=False):
         if eval:
             self.box_predictor_regression.eval()
             self.box_head_regression.eval()
@@ -212,17 +212,21 @@ class Track(object):
         # Only train the box prediction head
         with torch.no_grad():
             feat = self.box_head_regression(roi_pool_feat)
-        _, regressed_boxes = self.box_predictor_regression(feat)
+        _, bbox_pred_offset = self.box_predictor_regression(feat)
+        regressed_boxes = bbox_pred_decoder(bbox_pred_offset, proposals)
+        regressed_boxes = regressed_boxes[:, 1:].squeeze(dim=1)
+
         print(boxes[:3, :])
         print(regressed_boxes[:3, :])
         input()
+
         loss = F.mse_loss(boxes, regressed_boxes[:, 0:4]) # TODO L2 loss
         if eval:
             self.box_predictor_regression.train()
             self.box_head_regression.train()
         return loss
 
-    def finetune_regression(self, finetuning_config, fpn_features, box_head_regression, box_predictor_regression, early_stopping=False):
+    def finetune_regression(self, finetuning_config, fpn_features, box_head_regression, box_predictor_regression, bbox_pred_decoder, early_stopping=False):
         self.box_head_regression = box_head_regression
         self.box_predictor_regression = box_predictor_regression
         self.box_predictor_regression.train()
@@ -243,7 +247,7 @@ class Track(object):
         print("Finetuning track {}".format(self.id))
         for i in range(int(finetuning_config["iterations"])):
             optimizer.zero_grad()
-            loss = self.forward_pass_for_regressor_training(training_boxes, fpn_features, eval=False)
+            loss = self.forward_pass_for_regressor_training(training_boxes, fpn_features, bbox_pred_decoder, eval=False)
             print('Finished iteration {} --- Loss {}'.format(i, loss.item()))
             loss.backward()
             optimizer.step()

@@ -108,7 +108,7 @@ class Tracker:
                 box_head_copy_regression = self.get_box_head()
                 box_predictor_copy_regression = self.get_box_predictor()
                 track.finetune_regression(self.finetuning_config, self.obj_detect.fpn_features,
-                                              box_head_copy_regression, box_predictor_copy_regression,
+                                              box_head_copy_regression, box_predictor_copy_regression, self.obj_detect.roi_heads.box_coder.decode,
                                               early_stopping=self.finetuning_config['early_stopping_classifier'])
 
             self.tracks.append(track)
