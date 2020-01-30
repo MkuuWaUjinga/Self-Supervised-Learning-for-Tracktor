@@ -202,6 +202,9 @@ class Track(object):
         # print(self.forward_pass(dets, box_roi_pool, fpn_features, scores=True))
 
     def forward_pass_for_regressor_training(self, boxes, fpn_features, bbox_pred_decoder, eval=False):
+        scaled_gt_box = resize_boxes(
+            boxes, self.im_info, self.transformed_image_size[0]).squeeze(0)
+
         if eval:
             self.box_predictor_regression.eval()
             self.box_head_regression.eval()
@@ -216,11 +219,11 @@ class Track(object):
         regressed_boxes = bbox_pred_decoder(bbox_pred_offset, proposals)
         regressed_boxes = regressed_boxes[:, 1:].squeeze(dim=1)
 
-        print(boxes[:3, :])
+        print(scaled_gt_box[:3, :])
         print(regressed_boxes[:3, :])
         input()
 
-        loss = F.mse_loss(boxes, regressed_boxes[:, 0:4]) # TODO L2 loss
+        loss = F.mse_loss(scaled_gt_box, regressed_boxes[:, 0:4]) # TODO L2 loss
         if eval:
             self.box_predictor_regression.train()
             self.box_head_regression.train()
