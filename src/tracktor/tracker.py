@@ -9,7 +9,7 @@ from tracktor.track import Track
 from tracktor.visualization import plot_compare_bounding_boxes, VisdomLinePlotter, plot_bounding_boxes
 from tracktor.utils import bbox_overlaps, warp_pos, get_center, get_height, get_width, make_pos
 
-from torchvision.ops.boxes import clip_boxes_to_image, nms
+from torchvision.ops.boxes import clip_boxes_to_image, nms, box_iou
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
 
 #if not torch.cuda.is_available():
@@ -539,6 +539,32 @@ class Tracker:
                                                           self.obj_detect.roi_heads.box_coder.decode,
                                                           early_stopping=self.finetuning_config[
                                                               'early_stopping_classifier'])
+
+                        if self.finetuning_config["validation_over_time"]:
+                            if np.mod(track.frames_since_active, self.finetuning_config["validation_interval"]) == 0:
+                                for checkpoint, models in track.checkpoints.items():
+                                    test_rois = track.generate_training_set(self.finetuning_config["max_displacement"],
+                                                                            batch_size=128)
+                                    box_pred_val, _ = self.obj_detect.predict_boxes(test_rois[:, 0:4],
+                                                                                    box_head=models[0],
+                                                                                    box_predictor=models[1])
+                                    annotated_boxes = annotated_boxes.to(device)
+                                    index_likely_bounding_box = torch.argmax(box_iou(track.pos, annotated_boxes))
+                                    annotated_likely_ground_truth_bounding_box = annotated_boxes[
+                                                                                 index_likely_bounding_box, :]
+                                    criterion_regressor = torch.nn.SmoothL1Loss()
+                                    loss = criterion_regressor(box_pred_val,
+                                                               annotated_likely_ground_truth_bounding_box.repeat(128,
+                                                                                                                 1))
+                                    if checkpoint == 0:
+                                        base_loss = loss.item()
+                                    else:
+                                        track.plotter.plot('loss', 'val {}'.format(checkpoint),
+                                                           'Regression Loss track {}'.format(i),
+                                                           track.frames_since_active, loss.item() - base_loss)
+                                        track.plotter.plot('loss', 'baseline',
+                                                           'Baseline',
+                                                           track.frames_since_active, 0)
 
                 if keep.nelement() > 0:
                     if self.do_reid:
