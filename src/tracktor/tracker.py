@@ -6,7 +6,8 @@ from scipy.optimize import linear_sum_assignment
 import cv2
 
 from tracktor.track import Track
-from tracktor.visualization import plot_compare_bounding_boxes, VisdomLinePlotter, plot_bounding_boxes
+from tracktor.visualization import plot_compare_bounding_boxes, VisdomLinePlotter, plot_bounding_boxes, \
+    parse_ground_truth
 from tracktor.utils import bbox_overlaps, warp_pos, get_center, get_height, get_width, make_pos
 
 from torchvision.ops.boxes import clip_boxes_to_image, nms, box_iou
@@ -542,6 +543,10 @@ class Tracker:
 
                         if self.finetuning_config["validation_over_time"]:
                             if np.mod(track.frames_since_active, self.finetuning_config["validation_interval"]) == 0:
+                                if self.finetuning_config["validation_over_time"]:
+                                    annotated_boxes = parse_ground_truth(frame, self.ground_truth).type(
+                                        torch.FloatTensor)
+
                                 for checkpoint, models in track.checkpoints.items():
                                     test_rois = track.generate_training_set_regression(track.pos, self.finetuning_config["max_displacement"],
                                                                             batch_size=128)
