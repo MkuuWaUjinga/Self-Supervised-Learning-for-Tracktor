@@ -23,5 +23,6 @@ tracktor:
       feature_collection_interval: 1
       'max_displacement': 0.01
       'validation_over_time': True
-      'checkpoint_interval': 3
+      'checkpoint_interval': 6
+      'validation_interval': 1
   'output_subdir': '1'

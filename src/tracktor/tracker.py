@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from scipy.optimize import linear_sum_assignment
 import cv2
+import pandas as pd
 
 from tracktor.track import Track
 from tracktor.visualization import plot_compare_bounding_boxes, VisdomLinePlotter, plot_bounding_boxes, \
@@ -23,7 +24,7 @@ class Tracker:
     # only track pedestrian
     cl = 1
 
-    def __init__(self, obj_detect, reid_network, tracker_cfg):
+    def __init__(self, obj_detect, reid_network, tracker_cfg, sequence_number=00):
         self.obj_detect = obj_detect
         self.reid_network = reid_network
         self.detection_person_thresh = tracker_cfg['detection_person_thresh']
@@ -54,6 +55,11 @@ class Tracker:
         self.im_index = 0
         self.results = {}
 
+    def set_ground_truth(self, seq_string):
+        sequence_number = seq_string[6:8]
+        if self.finetuning_config["validation_over_time"]:
+            self.ground_truth = pd.read_csv(f'./data/MOT17Labels/train/MOT17-{sequence_number}-FRCNN/gt/gt.txt',
+                                        header=None, sep=',')
     def reset(self, hard=True):
         self.tracks = []
         self.inactive_tracks = []
@@ -566,7 +572,7 @@ class Tracker:
                                     else:
                                         track.plotter.plot('loss', 'val {}'.format(checkpoint),
                                                            'Regression Loss track {}'.format(i),
-                                                           track.frames_since_active, loss.item() - base_loss)
+                                                           track.frames_since_active, loss.item() - base_loss, val_negative=True)
                                         track.plotter.plot('loss', 'baseline',
                                                            'Baseline',
                                                            track.frames_since_active, 0)

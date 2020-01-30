@@ -92,8 +92,8 @@ def main(tracktor, reid, _config, _log, _run):
     dataset = Datasets(tracktor['dataset'])
 
     for seq in dataset:
-
          tracker.reset()
+         tracker.set_ground_truth(str(seq))
 
          start = time.time()
 
@@ -101,6 +101,7 @@ def main(tracktor, reid, _config, _log, _run):
 
          data_loader = DataLoader(seq, batch_size=1, shuffle=False)
          for i, frame in enumerate(tqdm(data_loader)):
+             print(i)
              if len(seq) * tracktor['frame_split'][0] <= i <= len(seq) * tracktor['frame_split'][1]:
                  tracker.step(frame, i)
                  num_frames += 1
