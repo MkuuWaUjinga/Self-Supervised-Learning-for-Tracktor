@@ -3,7 +3,7 @@ from torch import randperm
 from torch.utils.data import Subset
 from collections import defaultdict
 from torchvision.ops.boxes import box_iou
-
+import numpy as np
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class IndividualDataset(torch.utils.data.Dataset):
@@ -109,8 +109,22 @@ class IndividualDataset(torch.utils.data.Dataset):
             val_idx = val_idx[randperm(len(val_idx))]
         return [Subset(self, train_idx), Subset(self, val_idx)]
 
-    def establish_class_balance(self):
-        return
+    def get_upsampled_dataset(self, to_batch_size):
+        upsampled_set = IndividualDataset(self.id)
+        if self.features.size()[0] > to_batch_size:
+            self.features = self.features[-512:, :, :, :]
+            self.boxes = self.boxes[-512:, :]
+            self.scores = self.scores[-512:]
+            upsampled_set.features = self.features
+            upsampled_set.boxes = self.boxes
+            upsampled_set.scores = self.scores
+        else:
+            n = int(np.floor(to_batch_size / self.features.size()[0]))
+            upsampled_set.features = self.features.repeat(n, 1, 1, 1)
+            upsampled_set.boxes = self.boxes.repeat(n, 1)
+            upsampled_set.scores = self.scores.repeat(n)
+        return upsampled_set
+
 
     def __len__(self):
         return self.features.size()[0]

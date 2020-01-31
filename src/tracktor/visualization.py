@@ -5,7 +5,7 @@ import pandas as pd
 from visdom import Visdom
 
 
-def plot_compare_bounding_boxes(box_finetune, box_no_finetune, image):
+def plot_compare_bounding_boxes(box_finetune, box_no_finetune, image, gt_file):
     image = image.squeeze()
     image = image.permute(1, 2, 0)
 
@@ -22,15 +22,15 @@ def plot_compare_bounding_boxes(box_finetune, box_no_finetune, image):
                           linewidth=0.9, color=colors[i])
         )
 
-    for gt_bbox in parse_ground_truth(1):
+    for gt_bbox in parse_ground_truth(1, gt_file):
         ax.add_patch(
             plt.Rectangle((gt_bbox[0], gt_bbox[1]),
-                          gt_bbox[2],
-                          gt_bbox[3], fill=False,
+                          gt_bbox[2] - gt_bbox[0],
+                          gt_bbox[3] - gt_bbox[1], fill=False,
                           linewidth=0.9, color=colors[2])
         )
     plt.axis('off')
-    plt.show()
+    plt.savefig("comparint_bounding_boxes.png")
     return
 
 

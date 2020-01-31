@@ -81,8 +81,8 @@ class Tracker:
                     t.finetune_classification(self.finetuning_config, box_head_copy_for_classifier,
                                                    box_predictor_copy_for_classifier, early_stopping=False)
                     t.use_for_finetuning = True
-            pickle.dump(t.training_set,
-                        open("training_set/feature_training_set_track_{}.pkl".format(t.id), "wb"))
+#            pickle.dump(t.training_set,
+#                        open("training_set/feature_training_set_track_{}.pkl".format(t.id), "wb"))
 
         self.inactive_tracks += tracks
 
@@ -97,12 +97,11 @@ class Tracker:
                           self.motion_model_cfg['n_steps'] if self.motion_model_cfg['n_steps'] > 0 else 1,
                           image.size()[1:3], self.obj_detect.image_size, box_roi_pool=box_roi_pool)
             if self.finetuning_config["for_tracking"] or self.finetuning_config["for_reid"]:
-                if np.mod(frame, 20) == 0:
-                    other_pedestrians_bboxes = torch.cat((new_det_pos[:i], new_det_pos[i + 1:], old_tracks))
-                    track.update_training_set_classification(self.finetuning_config['batch_size'],
-                                                         other_pedestrians_bboxes,
-                                                         self.obj_detect.fpn_features,
-                                                         include_previous_frames=True)
+                other_pedestrians_bboxes = torch.cat((new_det_pos[:i], new_det_pos[i + 1:], old_tracks))
+                track.update_training_set_classification(self.finetuning_config['batch_size'],
+                                                     other_pedestrians_bboxes,
+                                                     self.obj_detect.fpn_features,
+                                                     include_previous_frames=True)
 
             if self.finetuning_config["for_tracking"]:
                 box_head_copy_for_classifier = self.get_box_head()
@@ -112,11 +111,15 @@ class Tracker:
                                               early_stopping=self.finetuning_config['early_stopping_classifier'])
 
             if self.finetuning_config["finetune_regression"]:
+                track.update_training_set_regression(self.finetuning_config['batch_size'],
+                                                     self.finetuning_config['max_displacement'],
+                                                     self.obj_detect.fpn_features,
+                                                     include_previous_frames=True)
                 box_head_copy_regression = self.get_box_head()
                 box_predictor_copy_regression = self.get_box_predictor()
-                track.finetune_regression(self.finetuning_config, self.obj_detect.fpn_features,
-                                              box_head_copy_regression, box_predictor_copy_regression, self.obj_detect.roi_heads.box_coder.decode,
-                                              early_stopping=self.finetuning_config['early_stopping_classifier'])
+                track.finetune_regression(self.finetuning_config, box_head_copy_regression,
+                                          box_predictor_copy_regression, self.obj_detect.roi_heads.box_coder.decode,
+                                          early_stopping=self.finetuning_config['early_stopping_classifier'])
 
             self.tracks.append(track)
 
@@ -159,7 +162,8 @@ class Tracker:
 
                 if plot_compare:
                     box_no_finetune, score_no_finetune = self.obj_detect.predict_boxes(track.pos)
-                    plot_compare_bounding_boxes(box, box_no_finetune, blob['img'])
+                    plot_compare_bounding_boxes(box, box_no_finetune, blob['img'], self.ground_truth)
+                    input('plotted image :D')
                 scores.append(score)
                 bbox = clip_boxes_to_image(box, blob['img'].shape[-2:])
                 pos.append(bbox)
@@ -191,7 +195,7 @@ class Tracker:
 
                 if plot_compare:
                     box_no_finetune, score_no_finetune = self.obj_detect.predict_boxes(track.pos)
-                    plot_compare_bounding_boxes(box, box_no_finetune, blob['img'])
+                    plot_compare_bounding_boxes(box, box_no_finetune, blob['img'], self.ground_truth)
                 scores.append(score)
                 bbox = clip_boxes_to_image(box, blob['img'].shape[-2:])
                 pos.append(bbox)
@@ -503,7 +507,7 @@ class Tracker:
                 self.tracks = [t for t in self.tracks if t.has_positive_area()]
 
             # regress
-            person_scores = self.regress_tracks(blob, frame=frame)
+            person_scores = self.regress_tracks(blob, frame=frame, plot_compare=False)
 
             if len(self.tracks):
                 # create nms input
@@ -523,10 +527,17 @@ class Tracker:
 
                         if self.finetuning_config["build_up_training_set"] and np.mod(track.frames_since_active,
                                                         self.finetuning_config["feature_collection_interval"]) == 0:
-                            track.update_training_set_classification(self.finetuning_config['batch_size'],
+                            if self.finetuning_config["for_tracking"] and self.finetuning_config["finetune_repeatedly"]:
+                                track.update_training_set_classification(self.finetuning_config['batch_size'],
                                             other_pedestrians_bboxes,
                                             self.obj_detect.fpn_features,
                                             include_previous_frames=True)
+
+                            if self.finetuning_config["finetune_regression"]:
+                                track.update_training_set_regression(self.finetuning_config['batch_size'],
+                                                                     self.finetuning_config['max_displacement'],
+                                                                     self.obj_detect.fpn_features,
+                                                                     include_previous_frames=True)
 
                         if self.finetuning_config["for_tracking"] and self.finetuning_config["finetune_repeatedly"]:
                             if np.mod(track.frames_since_active, self.finetuning_config["finetuning_interval"]) == 0:
@@ -541,8 +552,8 @@ class Tracker:
                                 box_head_copy_regression = self.get_box_head()
                                 box_predictor_copy_regression = self.get_box_predictor()
 
-                                track.finetune_regression(self.finetuning_config, self.obj_detect.fpn_features,
-                                                          box_head_copy_regression, box_predictor_copy_regression,
+                                track.finetune_regression(self.finetuning_config, box_head_copy_regression,
+                                                          box_predictor_copy_regression,
                                                           self.obj_detect.roi_heads.box_coder.decode,
                                                           early_stopping=self.finetuning_config[
                                                               'early_stopping_classifier'])
@@ -569,6 +580,7 @@ class Tracker:
                                                                                                                  1))
                                     if checkpoint == 0:
                                         base_loss = loss.item()
+                                        box_no_finetune = box_pred_val
                                     else:
                                         track.plotter.plot('loss', 'val {}'.format(checkpoint),
                                                            'Regression Loss track {}'.format(i),
@@ -576,6 +588,8 @@ class Tracker:
                                         track.plotter.plot('loss', 'baseline',
                                                            'Baseline',
                                                            track.frames_since_active, 0)
+                                        box_finetune = box_pred_val
+                                #plot_compare_bounding_boxes(box_finetune, box_no_finetune, blob['img'], self.ground_truth)
 
                 if keep.nelement() > 0:
                     if self.do_reid:
@@ -642,9 +656,9 @@ class Tracker:
 
         self.im_index += 1
         self.last_image = blob['img'][0]
-        if frame == 599:
-            for t in self.tracks:
-                pickle.dump(t.training_set, open("training_set/feature_training_set_track_{}.pkl".format(t.id), "wb"))
+        # if frame == 599:
+        #     for t in self.tracks:
+        #         pickle.dump(t.training_set, open("training_set/feature_training_set_track_{}.pkl".format(t.id), "wb"))
 
     def get_results(self):
         return self.results
