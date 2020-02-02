@@ -31,6 +31,7 @@ ex.add_named_config('cfg_caro_ws2', 'experiments/cfgs/hp_search/cfg_caro_ws2.yam
 ex.add_named_config('cfg_caro_ws3', 'experiments/cfgs/hp_search/cfg_caro_ws3.yaml')
 ex.add_named_config('cfg_caro_local', 'experiments/cfgs/hp_search/cfg_caro_local.yaml')
 ex.add_named_config('cfg_regression', 'experiments/cfgs/hp_search/cfg_regression.yaml')
+ex.add_named_config('cfg_regression_8', 'experiments/cfgs/hp_search/cfg_regression_8.yaml')
 ex.add_named_config('cfg_regression_old', 'experiments/cfgs/hp_search/cfg_regression_old.yaml')
 
 
