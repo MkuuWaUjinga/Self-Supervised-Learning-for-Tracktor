@@ -8,8 +8,8 @@ tracktor:
       for_tracking: False
       for_reid: False
       finetune_regression: True
-      'checkpoint_interval': 6
-      'iterations':  6
+      'checkpoint_interval': 3
+      'iterations':  3
       'learning_rate': 1e-5
       'batch_size': 64
       validate: False
