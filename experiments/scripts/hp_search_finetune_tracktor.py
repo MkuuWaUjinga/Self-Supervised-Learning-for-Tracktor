@@ -106,6 +106,8 @@ def main(tracktor, reid, _config, _log, _run):
              if len(seq) * tracktor['frame_split'][0] <= i <= len(seq) * tracktor['frame_split'][1]:
                  tracker.step(frame, i)
                  num_frames += 1
+                 if i ==4:
+                     break
 
          results = tracker.get_results()
 
@@ -132,9 +134,9 @@ def main(tracktor, reid, _config, _log, _run):
     _log.info(f"Tracking runtime for all sequences (without evaluation or image writing): "
                f"{time_total:.1f} s ({num_frames / time_total:.1f} Hz)")
 
-    if mot_accums:
-        summary = evaluate_mot_accums(mot_accums, [str(s) for s in dataset if not s.no_gt], generate_overall=True)
-        summary.to_pickle("output/finetuning_results/results_{}_{}_{}_{}_{}_{}.pkl".format(tracktor['output_subdir'],
+    #if mot_accums:
+    summary = evaluate_mot_accums(mot_accums, [str(s) for s in dataset if not s.no_gt], generate_overall=True)
+    summary.to_pickle("output/finetuning_results/results_{}_{}_{}_{}_{}_{}.pkl".format(tracktor['output_subdir'],
                                                                                            tracktor['tracker']['finetuning']['max_displacement'],
                                                                                             tracktor['tracker']['finetuning']['batch_size'],
                                                                                             tracktor['tracker']['finetuning']['learning_rate'],
