@@ -37,12 +37,13 @@ class Track(object):
         self.box_predictor_regression = None
         self.box_head_regression = None
         self.scale = self.im_info[0] / self.transformed_image_size[0][0]
-        #self.plotter = VisdomLinePlotter(env_name='training')
+        # self.plotter = VisdomLinePlotter(env_name='validation_over_time')
         self.checkpoints = dict()
         self.training_set_classification = IndividualDataset(self.id)
         self.training_set_regression = IndividualDataset(self.id)
         self.box_roi_pool = box_roi_pool
         self.use_for_finetuning = False
+        self.ground_truth_box = None
 
     def has_positive_area(self):
         return self.pos[0, 2] > self.pos[0, 0] and self.pos[0, 3] > self.pos[0, 1]
@@ -83,16 +84,18 @@ class Track(object):
 
         return training_boxes
 
-    def update_training_set_regression(self, batch_size, max_displacement, fpn_features,
+    def update_training_set_regression(self, ground_truth_box, batch_size, max_displacement, fpn_features,
                                            include_previous_frames=False, shuffle=True):
-        boxes = self.generate_training_set_regression(self.pos, max_displacement, batch_size, fpn_features)
+        boxes = self.generate_training_set_regression(ground_truth_box, max_displacement, batch_size, fpn_features)
         if shuffle:
             boxes = boxes[torch.randperm(boxes.size(0))]
         boxes_resized = resize_boxes(boxes, self.im_info, self.transformed_image_size[0])
         proposals = [boxes_resized]
         with torch.no_grad():
             roi_pool_feat = self.box_roi_pool(fpn_features, proposals, self.im_info).to(device)
-        training_set_dict = {'features': roi_pool_feat, 'boxes': boxes, 'scores': torch.ones(boxes.size()[0]).to(device)}
+        ground_truth_boxes = ground_truth_box.repeat(boxes.size()[0], 1)
+        training_set_dict = {'features': roi_pool_feat, 'boxes': boxes,
+                             'scores': torch.ones(boxes.size()[0]).to(device), 'ground_truth_boxes': ground_truth_boxes}
 
         if not include_previous_frames:
             self.training_set_regression = IndividualDataset(self.id)
@@ -135,6 +138,7 @@ class Track(object):
 
     def update_training_set_classification(self, batch_size, additional_dets, fpn_features,
                                            include_previous_frames=False, shuffle=False):
+        print('making a classification set')
         training_set_dict = self.generate_training_set_classification(batch_size, additional_dets, fpn_features, shuffle=shuffle)
 
         if not include_previous_frames:
@@ -218,9 +222,9 @@ class Track(object):
         # dets = torch.cat((self.pos, additional_dets))
         # print(self.forward_pass(dets, box_roi_pool, fpn_features, scores=True))
 
-    def forward_pass_for_regressor_training(self, boxes, features, bbox_pred_decoder, eval=False):
+    def forward_pass_for_regressor_training(self, boxes, features, bbox_pred_decoder, ground_truth_boxes, eval=False):
         scaled_gt_box = resize_boxes(
-            boxes, self.im_info, self.transformed_image_size[0]).squeeze(0)
+            ground_truth_boxes, self.im_info, self.transformed_image_size[0]).squeeze(0)
 
         if eval:
             self.box_predictor_regression.eval()
@@ -243,8 +247,7 @@ class Track(object):
             self.box_head_regression.train()
         return loss
 
-    def finetune_regression(self, finetuning_config, box_head_regression, box_predictor_regression, bbox_pred_decoder,
-                            early_stopping=False):
+    def finetune_regression(self, finetuning_config, box_head_regression, box_predictor_regression, bbox_pred_decoder):
         training_set = self.training_set_regression.get_upsampled_dataset(1024)
         self.box_head_regression = box_head_regression
         self.box_predictor_regression = box_predictor_regression
@@ -273,9 +276,9 @@ class Track(object):
         for i in range(int(finetuning_config["iterations"])):
             for i_sample, sample_batch in enumerate(dataloader):
                 if finetuning_config["validation_over_time"]:
-                    if not self.plotter:
-                        self.plotter = VisdomLinePlotter()
-                        print("Making Plotter")
+                    # if not self.plotter:
+                    #     self.plotter = VisdomLinePlotter(env_name='validation_over_time')
+                    #     print("Making Plotter")
                     if np.mod(i + 1, finetuning_config["checkpoint_interval"]) == 0:
                         self.box_predictor_regression.eval()
                         save_state_box_predictor = FastRCNNPredictor(1024, 2).to(device)
@@ -285,7 +288,9 @@ class Track(object):
                         self.box_predictor_regression.train()
 
                 optimizer.zero_grad()
-                loss = self.forward_pass_for_regressor_training(sample_batch['boxes'], sample_batch['features'], bbox_pred_decoder, eval=False)
+                loss = self.forward_pass_for_regressor_training(sample_batch['boxes'], sample_batch['features'],
+                                                                bbox_pred_decoder, sample_batch['ground_truth_boxes'],
+                                                                eval=False)
                 loss.backward()
                 optimizer.step()
                 #scheduler.step()

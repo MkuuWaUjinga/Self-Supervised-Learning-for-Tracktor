@@ -31,6 +31,7 @@ ex.add_named_config('cfg_caro_ws2', 'experiments/cfgs/hp_search/cfg_caro_ws2.yam
 ex.add_named_config('cfg_caro_ws3', 'experiments/cfgs/hp_search/cfg_caro_ws3.yaml')
 ex.add_named_config('cfg_caro_local', 'experiments/cfgs/hp_search/cfg_caro_local.yaml')
 ex.add_named_config('cfg_regression', 'experiments/cfgs/hp_search/cfg_regression.yaml')
+ex.add_named_config('cfg_regression_old', 'experiments/cfgs/hp_search/cfg_regression_old.yaml')
 
 
 ########### DEFAULT################
@@ -136,5 +137,6 @@ def main(tracktor, reid, _config, _log, _run):
                                                                                            tracktor['tracker']['finetuning']['max_displacement'],
                                                                                             tracktor['tracker']['finetuning']['batch_size'],
                                                                                             tracktor['tracker']['finetuning']['learning_rate'],
-                                                                                            tracktor['tracker']['finetuning']['iterations']))
+                                                                                            tracktor['tracker']['finetuning']['iterations'],
+                                                                                            tracktor['tracker']['finetuning']['finetuning_interval']))
 

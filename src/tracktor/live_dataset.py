@@ -12,6 +12,7 @@ class IndividualDataset(torch.utils.data.Dataset):
         self.features = torch.tensor([]).to(device)
         self.boxes = torch.tensor([]).to(device)
         self.scores = torch.tensor([]).to(device)
+        self.ground_truth_boxes = torch.tensor([]).to(device)
         self.samples_per_frame = None
         self.number_of_positive_examples = None
         self.keep_frames = 50
@@ -22,6 +23,8 @@ class IndividualDataset(torch.utils.data.Dataset):
         self.features = torch.cat((self.features, training_set_dict['features']))
         self.boxes = torch.cat((self.boxes, training_set_dict['boxes']))
         self.scores = torch.cat((self.scores, training_set_dict['scores']))
+        if training_set_dict['ground_truth_boxes'] is not None:
+            self.ground_truth_boxes = torch.cat((self.ground_truth_boxes, training_set_dict['ground_truth_boxes']))
         if self.num_frames == self.keep_frames:
             self.remove_samples()
 
@@ -115,14 +118,17 @@ class IndividualDataset(torch.utils.data.Dataset):
             self.features = self.features[-512:, :, :, :]
             self.boxes = self.boxes[-512:, :]
             self.scores = self.scores[-512:]
+            self.ground_truth_boxes = self.ground_truth_boxes[-512:, :]
             upsampled_set.features = self.features
             upsampled_set.boxes = self.boxes
             upsampled_set.scores = self.scores
+            upsampled_set.ground_truth_boxes = self.ground_truth_boxes
         else:
             n = int(np.floor(to_batch_size / self.features.size()[0]))
             upsampled_set.features = self.features.repeat(n, 1, 1, 1)
             upsampled_set.boxes = self.boxes.repeat(n, 1)
             upsampled_set.scores = self.scores.repeat(n)
+            upsampled_set.ground_truth_boxes = self.ground_truth_boxes.repeat(n, 1)
         return upsampled_set
 
 
@@ -130,4 +136,7 @@ class IndividualDataset(torch.utils.data.Dataset):
         return self.features.size()[0]
 
     def __getitem__(self, idx):
-        return {'features': self.features[idx, :, :, :], 'boxes': self.boxes[idx, :], 'scores': self.scores[idx]}
+        if self.ground_truth_boxes is None:
+            return {'features': self.features[idx, :, :, :], 'boxes': self.boxes[idx, :], 'scores': self.scores[idx]}
+        else:
+            return {'features': self.features[idx, :, :, :], 'boxes': self.boxes[idx, :], 'scores': self.scores[idx], 'ground_truth_boxes': self.ground_truth_boxes[idx, :]}

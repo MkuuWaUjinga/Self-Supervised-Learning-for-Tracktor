@@ -64,6 +64,7 @@ class FRCNN_FPN(FasterRCNN):
         return pred_boxes, pred_scores
 
     def load_image(self, img):
+        self.fpn_features = []
         device = list(self.parameters())[0].device
         img = img.to(device)
         targets = None
@@ -73,3 +74,4 @@ class FRCNN_FPN(FasterRCNN):
         self.image_size = img.image_sizes
         self.image = img.tensors[0]
         self.fpn_features = self.backbone(img.tensors)
+        self.image = []

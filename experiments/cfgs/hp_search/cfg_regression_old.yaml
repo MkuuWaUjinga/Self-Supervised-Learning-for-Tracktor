@@ -1,5 +1,5 @@
 tracktor:
-  dataset: mot17_09_FRCNN17
+  dataset: mot17_train_FRCNN17
   write_images: False
   'tracker':
     inactive_patience: 600
@@ -10,14 +10,14 @@ tracktor:
       finetune_regression: True
       'iterations':  6
       'learning_rate': 1e-5
-      'batch_size': 64
+      'batch_size': 1024
       validate: False
       plot_training_curves: False
       val_batch_size: 32
       finetune_repeatedly: True
-      finetuning_interval: 10
+      finetuning_interval: 50
       early_stopping_classifier: True
-      'build_up_training_set': True
+      'build_up_training_set': False
       'gamma': 0.88
       'decay_every': 2
       feature_collection_interval: 2

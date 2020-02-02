@@ -47,7 +47,7 @@ class Tracker:
             self.bbox_predictor_weights = self.obj_detect.roi_heads.box_predictor.state_dict()
             self.bbox_head_weights = self.obj_detect.roi_heads.box_head.state_dict()
 
-        if self.finetuning_config["validate"] or self.finetuning_config["plot_training_curves"]:
+        if self.finetuning_config["validate"] or self.finetuning_config["plot_training_curves"] or self.finetuning_config["validation_over_time"]:
             self.plotter = VisdomLinePlotter(env_name='person_scores', xlabel="Frames")
         self.tracks = []
         self.inactive_tracks = []
@@ -57,8 +57,8 @@ class Tracker:
 
     def set_ground_truth(self, seq_string):
         sequence_number = seq_string[6:8]
-        if self.finetuning_config["validation_over_time"]:
-            self.ground_truth = pd.read_csv(f'./data/MOT17Labels/train/MOT17-{sequence_number}-FRCNN/gt/gt.txt',
+        #if self.finetuning_config["validation_over_time"]:
+        self.ground_truth = pd.read_csv(f'./data/MOT17Labels/train/MOT17-{sequence_number}-FRCNN/gt/gt.txt',
                                         header=None, sep=',')
     def reset(self, hard=True):
         self.tracks = []
@@ -73,6 +73,7 @@ class Tracker:
         self.tracks = [t for t in self.tracks if t not in tracks]
         for t in tracks:
             t.pos = t.last_pos[-1]
+            t.training_set_regression = []
             if self.finetuning_config["for_reid"]:
                 box_head_copy_for_classifier = self.get_box_head()
                 box_predictor_copy_for_classifier = self.get_box_predictor()
@@ -111,15 +112,15 @@ class Tracker:
                                               early_stopping=self.finetuning_config['early_stopping_classifier'])
 
             if self.finetuning_config["finetune_regression"]:
-                track.update_training_set_regression(self.finetuning_config['batch_size'],
+                ground_truth_box = new_det_pos[i].view(1, -1)
+                track.update_training_set_regression(ground_truth_box, self.finetuning_config['batch_size'],
                                                      self.finetuning_config['max_displacement'],
                                                      self.obj_detect.fpn_features,
                                                      include_previous_frames=True)
                 box_head_copy_regression = self.get_box_head()
                 box_predictor_copy_regression = self.get_box_predictor()
                 track.finetune_regression(self.finetuning_config, box_head_copy_regression,
-                                          box_predictor_copy_regression, self.obj_detect.roi_heads.box_coder.decode,
-                                          early_stopping=self.finetuning_config['early_stopping_classifier'])
+                                          box_predictor_copy_regression, self.obj_detect.roi_heads.box_coder.decode)
 
             self.tracks.append(track)
 
@@ -188,7 +189,6 @@ class Tracker:
                 # Regress with finetuned bbox head for each track
                 assert track.box_head_regression is not None
                 assert track.box_predictor_regression is not None
-
                 box, score = self.obj_detect.predict_boxes(track.pos,
                                                            box_head_regression=track.box_head_regression,
                                                            box_predictor_regression=track.box_predictor_regression)
@@ -527,14 +527,15 @@ class Tracker:
 
                         if self.finetuning_config["build_up_training_set"] and np.mod(track.frames_since_active,
                                                         self.finetuning_config["feature_collection_interval"]) == 0:
-                            if self.finetuning_config["for_tracking"] and self.finetuning_config["finetune_repeatedly"]:
+                            if self.finetuning_config["for_tracking"] and self.finetuning_config["build_up_training_set"]:
                                 track.update_training_set_classification(self.finetuning_config['batch_size'],
                                             other_pedestrians_bboxes,
                                             self.obj_detect.fpn_features,
                                             include_previous_frames=True)
 
                             if self.finetuning_config["finetune_regression"]:
-                                track.update_training_set_regression(self.finetuning_config['batch_size'],
+                                ground_truth_box, _ = self.obj_detect.predict_boxes(track.pos)
+                                track.update_training_set_regression(ground_truth_box, self.finetuning_config['batch_size'],
                                                                      self.finetuning_config['max_displacement'],
                                                                      self.obj_detect.fpn_features,
                                                                      include_previous_frames=True)
@@ -551,12 +552,16 @@ class Tracker:
                             if np.mod(track.frames_since_active, self.finetuning_config["finetuning_interval"]) == 0:
                                 box_head_copy_regression = self.get_box_head()
                                 box_predictor_copy_regression = self.get_box_predictor()
+                                if not self.finetuning_config["build_up_training_set"]:
+                                    track.update_training_set_regression(track.pos,
+                                                                         self.finetuning_config['batch_size'],
+                                                                         self.finetuning_config['max_displacement'],
+                                                                         self.obj_detect.fpn_features,
+                                                                         include_previous_frames=False)
 
                                 track.finetune_regression(self.finetuning_config, box_head_copy_regression,
                                                           box_predictor_copy_regression,
-                                                          self.obj_detect.roi_heads.box_coder.decode,
-                                                          early_stopping=self.finetuning_config[
-                                                              'early_stopping_classifier'])
+                                                          self.obj_detect.roi_heads.box_coder.decode)
 
                         if self.finetuning_config["validation_over_time"]:
                             if np.mod(track.frames_since_active, self.finetuning_config["validation_interval"]) == 0:
@@ -583,7 +588,7 @@ class Tracker:
                                         box_no_finetune = box_pred_val
                                     else:
                                         track.plotter.plot('loss', 'val {}'.format(checkpoint),
-                                                           'Regression Loss track {}'.format(i),
+                                                           'Regression Loss track {}'.format(track.id),
                                                            track.frames_since_active, loss.item() - base_loss, val_negative=True)
                                         track.plotter.plot('loss', 'baseline',
                                                            'Baseline',

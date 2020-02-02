@@ -1,5 +1,6 @@
 tracktor:
   dataset: mot17_02_FRCNN17
+  write_images: False
   'tracker':
     inactive_patience: 600
     do_reid: True

@@ -13,24 +13,25 @@ def plot_compare_bounding_boxes(box_finetune, box_no_finetune, image, gt_file):
     ax.imshow(image)
     colors = ['salmon', 'cyan', 'white']
 
+    for gt_bbox in parse_ground_truth(1, gt_file):
+        ax.add_patch(
+            plt.Rectangle((gt_bbox[0], gt_bbox[1]),
+                          gt_bbox[2] - gt_bbox[0],
+                          gt_bbox[3] - gt_bbox[1], fill=False,
+                          linewidth=0.2, color=colors[2])
+        )
+
     for i, box in enumerate([box_finetune, box_no_finetune]):
         box_np = box.numpy()
         ax.add_patch(
             plt.Rectangle((box_np[0, 0], box_np[0, 1]),
                           box_np[0, 2] - box_np[0, 0],
                           box_np[0, 3] - box_np[0, 1], fill=False,
-                          linewidth=0.9, color=colors[i])
+                          linewidth=0.2, color=colors[i])
         )
 
-    for gt_bbox in parse_ground_truth(1, gt_file):
-        ax.add_patch(
-            plt.Rectangle((gt_bbox[0], gt_bbox[1]),
-                          gt_bbox[2] - gt_bbox[0],
-                          gt_bbox[3] - gt_bbox[1], fill=False,
-                          linewidth=0.9, color=colors[2])
-        )
     plt.axis('off')
-    plt.savefig("comparint_bounding_boxes.png")
+    plt.savefig("comparint_bounding_boxes.png", dpi=800, bbox_inches='tight')
     return
 
 
