@@ -37,7 +37,7 @@ class Track(object):
         self.box_predictor_regression = None
         self.box_head_regression = None
         self.scale = self.im_info[0] / self.transformed_image_size[0][0]
-       # self.plotter = VisdomLinePlotter(env_name='validation_over_time')
+        self.plotter = VisdomLinePlotter(env_name='validation_over_time')
         self.checkpoints = dict()
         self.training_set_classification = IndividualDataset(self.id)
         self.training_set_regression = IndividualDataset(self.id)

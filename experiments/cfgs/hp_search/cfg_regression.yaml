@@ -1,5 +1,5 @@
 tracktor:
-  dataset: mot17_train_FRCNN17
+  dataset: mot17_09_FRCNN17
   write_images: False
   'tracker':
     inactive_patience: 10
@@ -23,6 +23,6 @@ tracktor:
       'decay_every': 2
       feature_collection_interval: 5
       'max_displacement': 0.01
-      'validation_over_time': False
+      'validation_over_time': True
       'validation_interval': 1
   'output_subdir': '1'
