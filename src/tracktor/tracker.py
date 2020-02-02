@@ -564,7 +564,6 @@ class Tracker:
                                                           self.obj_detect.roi_heads.box_coder.decode)
 
                         if self.finetuning_config["validation_over_time"]:
-                            print(':8097')
                             if np.mod(track.frames_since_active, self.finetuning_config["validation_interval"]) == 0:
                                 annotated_boxes = parse_ground_truth(frame, self.ground_truth).type(
                                         torch.FloatTensor)
@@ -587,7 +586,6 @@ class Tracker:
                                         base_loss = loss.item()
                                         box_no_finetune = box_pred_val
                                     else:
-                                        print('should be plotting!!')
                                         track.plotter.plot('loss', 'val {}'.format(checkpoint),
                                                            'Regression Loss of Own Track Classifier {}'.format(track.id),
                                                            track.frames_since_active, loss.item() - base_loss, val_negative=True)

@@ -21,7 +21,7 @@ tracktor:
       'build_up_training_set': True
       'gamma': 0.88
       'decay_every': 2
-      feature_collection_interval: 2
+      feature_collection_interval: 5
       'max_displacement': 0.01
       'validation_over_time': True
       'validation_interval': 1
