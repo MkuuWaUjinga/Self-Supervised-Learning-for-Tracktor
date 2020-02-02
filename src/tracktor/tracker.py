@@ -588,7 +588,7 @@ class Tracker:
                                         box_no_finetune = box_pred_val
                                     else:
                                         track.plotter.plot('loss', 'val {}'.format(checkpoint),
-                                                           'Regression Loss track {}'.format(track.id),
+                                                           'Regression Loss of Own Track Classifier {}'.format(track.id),
                                                            track.frames_since_active, loss.item() - base_loss, val_negative=True)
                                         track.plotter.plot('loss', 'baseline',
                                                            'Baseline',
