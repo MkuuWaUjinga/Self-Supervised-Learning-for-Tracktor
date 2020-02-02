@@ -1,8 +1,8 @@
 tracktor:
-  dataset: mot17_09_FRCNN17
+  dataset: mot17_train_FRCNN17
   write_images: False
   'tracker':
-    inactive_patience: 600
+    inactive_patience: 10
     do_reid: True
     'finetuning':
       for_tracking: False
@@ -15,14 +15,14 @@ tracktor:
       plot_training_curves: False
       val_batch_size: 32
       finetune_repeatedly: True
-      finetuning_interval: 10
+      finetuning_interval: 5
       early_stopping_classifier: True
       'build_up_training_set': True
       'gamma': 0.88
       'decay_every': 2
       feature_collection_interval: 2
       'max_displacement': 0.01
-      'validation_over_time': False
+      'validation_over_time': True
       'checkpoint_interval': 6
       'validation_interval': 1
   'output_subdir': '1'
