@@ -527,7 +527,7 @@ class Tracker:
 
                         if self.finetuning_config["build_up_training_set"] and np.mod(track.frames_since_active,
                                                         self.finetuning_config["feature_collection_interval"]) == 0:
-                            if self.finetuning_config["for_tracking"] and self.finetuning_config["build_up_training_set"]:
+                            if self.finetuning_config["for_tracking"]:
                                 track.update_training_set_classification(self.finetuning_config['batch_size'],
                                             other_pedestrians_bboxes,
                                             self.obj_detect.fpn_features,
@@ -552,8 +552,9 @@ class Tracker:
                             if np.mod(track.frames_since_active, self.finetuning_config["finetuning_interval"]) == 0:
                                 box_head_copy_regression = self.get_box_head()
                                 box_predictor_copy_regression = self.get_box_predictor()
-                                if self.finetuning_config["build_up_training_set"]:
-                                    track.update_training_set_regression(track.pos,
+                                ground_truth_box, _ = self.obj_detect.predict_boxes(track.pos)
+                                if not self.finetuning_config["build_up_training_set"]:
+                                    track.update_training_set_regression(ground_truth_box,
                                                                          self.finetuning_config['batch_size'],
                                                                          self.finetuning_config['max_displacement'],
                                                                          self.obj_detect.fpn_features,
