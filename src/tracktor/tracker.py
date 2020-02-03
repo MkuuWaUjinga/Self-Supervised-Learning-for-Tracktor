@@ -633,7 +633,8 @@ class Tracker:
             new_det_scores = det_scores
 
             # try to reidentify tracks
-            new_det_features = self.reid_network.test_rois(blob['img'], new_det_pos).data
+            #new_det_features = self.reid_network.test_rois(blob['img'], new_det_pos).data
+            new_det_features = torch.tensor([])
             #if self.do_reid:
             #    new_det_pos, new_det_scores = self.reid(blob, new_det_pos, new_det_features, new_det_scores)
             if self.finetuning_config["for_reid"]:

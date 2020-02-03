@@ -2,7 +2,7 @@ tracktor:
   dataset: mot17_train_FRCNN17
   write_images: False
   'tracker':
-    inactive_patience: 600
+    inactive_patience: 10
     do_reid: True
     'finetuning':
       for_tracking: False
