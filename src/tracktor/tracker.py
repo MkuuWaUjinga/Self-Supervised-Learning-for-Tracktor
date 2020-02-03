@@ -524,6 +524,7 @@ class Tracker:
                         for j in range(len(self.tracks)):
                             if j != i:
                                 other_pedestrians_bboxes = torch.cat((other_pedestrians_bboxes, self.tracks[j].pos))
+                        print(track.training_set.features.size())
 
                         if self.finetuning_config["build_up_training_set"] and np.mod(track.frames_since_active,
                                                         self.finetuning_config["feature_collection_interval"]) == 0:
@@ -552,7 +553,7 @@ class Tracker:
                             if np.mod(track.frames_since_active, self.finetuning_config["finetuning_interval"]) == 0:
                                 box_head_copy_regression = self.get_box_head()
                                 box_predictor_copy_regression = self.get_box_predictor()
-                                if not self.finetuning_config["build_up_training_set"]:
+                                if self.finetuning_config["build_up_training_set"]:
                                     track.update_training_set_regression(track.pos,
                                                                          self.finetuning_config['batch_size'],
                                                                          self.finetuning_config['max_displacement'],
