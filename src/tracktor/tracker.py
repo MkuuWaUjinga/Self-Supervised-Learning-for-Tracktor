@@ -524,8 +524,6 @@ class Tracker:
                         for j in range(len(self.tracks)):
                             if j != i:
                                 other_pedestrians_bboxes = torch.cat((other_pedestrians_bboxes, self.tracks[j].pos))
-                        if track.training_set:
-                            print(track.training_set.features.size())
 
                         if self.finetuning_config["build_up_training_set"] and np.mod(track.frames_since_active,
                                                         self.finetuning_config["feature_collection_interval"]) == 0:
