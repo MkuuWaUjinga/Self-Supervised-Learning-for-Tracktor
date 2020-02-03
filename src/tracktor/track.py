@@ -258,7 +258,7 @@ class Track(object):
         self.box_predictor_regression = box_predictor_regression
         self.box_predictor_regression.train()
         self.box_head_regression.train()
-        dataloader = torch.utils.data.DataLoader(training_set, batch_size=512)
+        dataloader = torch.utils.data.DataLoader(training_set, batch_size=1024)
         optimizer = torch.optim.Adam(
             list(self.box_predictor_regression.parameters()), lr=float(finetuning_config["learning_rate"]))
         #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, gamma=finetuning_config['gamma'])
