@@ -11,10 +11,11 @@ tracktor:
       'iterations':  6
       'learning_rate': 1e-5
       'batch_size': 1024
-      validate: False
-      plot_training_curves: False
       val_batch_size: 32
       finetune_repeatedly: True
+      validate: False
+      plot_training_curves: False
+      'validation_over_time': False
       finetuning_interval: 50
       early_stopping_classifier: True
       'build_up_training_set': False
@@ -22,7 +23,6 @@ tracktor:
       'decay_every': 2
       feature_collection_interval: 2
       'max_displacement': 0.01
-      'validation_over_time': False
       'checkpoint_interval': 6
       'validation_interval': 1
   'output_subdir': '1'
