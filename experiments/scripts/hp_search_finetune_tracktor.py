@@ -106,8 +106,6 @@ def main(tracktor, reid, _config, _log, _run):
              if len(seq) * tracktor['frame_split'][0] <= i <= len(seq) * tracktor['frame_split'][1]:
                  tracker.step(frame, i)
                  num_frames += 1
-             if i == 4:
-                 break
 
          results = tracker.get_results()
 
