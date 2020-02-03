@@ -297,3 +297,4 @@ class Track(object):
         self.box_predictor_regression.eval()
         self.box_head_regression.eval()
         self.training_set_classification = torch.tensor([])
+        self.training_set_regression.features = [] # only for current experiment where training set is reinitialized
