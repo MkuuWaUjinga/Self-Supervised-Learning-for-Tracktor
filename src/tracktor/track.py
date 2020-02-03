@@ -86,7 +86,6 @@ class Track(object):
 
     def update_training_set_regression(self, ground_truth_box, batch_size, max_displacement, fpn_features,
                                            include_previous_frames=False, shuffle=True):
-        print(f'Updating training set of track {self.id}')
         boxes = self.generate_training_set_regression(ground_truth_box, max_displacement, batch_size, fpn_features)
         if shuffle:
             boxes = boxes[torch.randperm(boxes.size(0))]
@@ -272,7 +271,7 @@ class Track(object):
        #         self.plotter = VisdomLinePlotter(env_name='training')
        #     validation_boxes = self.generate_training_set_regression(self.pos, finetuning_config["max_displacement"],
        #     finetuning_config["val_batch_size"]).to(device)
-        print("Finetuning track {}".format(self.id))
+        #print("Finetuning track {}".format(self.id))
         save_state_box_predictor = FastRCNNPredictor(1024, 2).to(device)
         save_state_box_predictor.load_state_dict(self.box_predictor_regression.state_dict())
 
