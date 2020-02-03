@@ -250,7 +250,6 @@ class Track(object):
 
     def finetune_regression(self, finetuning_config, box_head_regression, box_predictor_regression, bbox_pred_decoder):
         if finetuning_config['build_up_training_set']:
-            print('upsampling/cutting')
             training_set = self.training_set_regression.get_upsampled_dataset(1024)
         else:
             training_set = self.training_set_regression
