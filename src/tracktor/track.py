@@ -185,7 +185,7 @@ class Track(object):
         optimizer = torch.optim.Adam(
             list(self.box_predictor_classification.parameters()) + list(self.box_head_classification.parameters()), lr=float(finetuning_config["learning_rate"]) )
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 2, gamma=finetuning_config['gamma'])
-        dataloader = torch.utils.data.DataLoader(training_set, batch_size=256)
+        dataloader = torch.utils.data.DataLoader(training_set, batch_size=1024)
 
         for i in range(int(finetuning_config["iterations"])):
             for i_sample, sample_batch in enumerate(dataloader):
@@ -249,7 +249,9 @@ class Track(object):
         return loss
 
     def finetune_regression(self, finetuning_config, box_head_regression, box_predictor_regression, bbox_pred_decoder):
-        training_set = self.training_set_regression.get_upsampled_dataset(1024)
+        if finetuning_config['build_up_training_set']:
+            print('upsampling/cutting')
+            training_set = self.training_set_regression.get_upsampled_dataset(1024)
         self.box_head_regression = box_head_regression
         self.box_predictor_regression = box_predictor_regression
         self.box_predictor_regression.train()
