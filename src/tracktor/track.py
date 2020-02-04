@@ -69,9 +69,6 @@ class Track(object):
         self.last_pos.clear()
         self.last_pos.append(self.pos.clone())
 
-    # TODO is displacement of roi helpful? Kinda like dropout as specific features might not be in the ROI anymore
-    # TODO only take negative examples that are close to positive example --> Makes training easier.
-    # TODO try lower learning rate and not to overfit --> best behaviour of 6 was when 0 track still had high score.
     def generate_training_set_regression(self, gt_pos, max_displacement, batch_size=8, plot=False, plot_args=None):
         gt_pos = gt_pos.to(device)
         random_displaced_bboxes = replicate_and_randomize_boxes(gt_pos,
@@ -108,7 +105,6 @@ class Track(object):
                                                                   0.0,
                                                                   batch_size=num_positive_examples).to(device)
         positive_examples = clip_boxes(positive_examples, self.im_info)
-        # positive_examples = self.pos.repeat(num_positive_examples, 1)
         positive_examples = torch.cat((positive_examples, torch.ones([num_positive_examples, 1]).to(device)), dim=1)
         boxes = positive_examples
         if additional_dets.size(0) != 0:
@@ -125,7 +121,6 @@ class Track(object):
                                                                          0.0,
                                                                          batch_size=num_negative_example).to(device)
                 negative_example = clip_boxes(negative_example, self.im_info)
-                # negative_example = additional_dets[i].view(1, -1).repeat(num_negative_example, 1)
                 negative_example_and_label = torch.cat((negative_example, torch.zeros([num_negative_example, 1]).to(device)), dim=1)
                 boxes = torch.cat((boxes, negative_example_and_label)).to(device)
         if shuffle:
@@ -153,10 +148,6 @@ class Track(object):
         if eval:
             self.box_predictor_classification.eval()
             self.box_head_classification.eval()
-#        boxes_resized = resize_boxes(boxes[:, 0:4], self.im_info, self.transformed_image_size[0])
-#        proposals = [boxes_resized]
-#        with torch.no_grad():
-#            roi_pool_feat = box_roi_pool(fpn_features, proposals, self.im_info)
         with torch.no_grad():
             feat = self.box_head_classification(features)
         class_logits, _ = self.box_predictor_classification(feat)
@@ -220,9 +211,6 @@ class Track(object):
         self.box_predictor_classification.eval()
         self.box_head_classification.eval()
 
-        # dets = torch.cat((self.pos, additional_dets))
-        # print(self.forward_pass(dets, box_roi_pool, fpn_features, scores=True))
-
     def forward_pass_for_regressor_training(self, boxes, features, bbox_pred_decoder, ground_truth_boxes, eval=False):
         scaled_gt_box = resize_boxes(
             ground_truth_boxes, self.im_info, self.transformed_image_size[0]).squeeze(0)
@@ -232,9 +220,6 @@ class Track(object):
             self.box_head_regression.eval()
         boxes_resized = resize_boxes(boxes[:, 0:4], self.im_info, self.transformed_image_size[0])
         proposals = [boxes_resized]
-        # with torch.no_grad():
-        #     roi_pool_feat = self.box_roi_pool(fpn_features, proposals, self.im_info)
-        # Only train the box prediction head
         roi_pool_feat = features
         with torch.no_grad():
             feat = self.box_head_regression(roi_pool_feat)
@@ -260,18 +245,6 @@ class Track(object):
         dataloader = torch.utils.data.DataLoader(training_set, batch_size=1024)
         optimizer = torch.optim.Adam(
             list(self.box_predictor_regression.parameters()), lr=float(finetuning_config["learning_rate"]))
-        #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, gamma=finetuning_config['gamma'])
-
-        # training_boxes = self.generate_training_set_regression(self.pos,
-        #                                                           finetuning_config["max_displacement"],
-        #                                                           batch_size=finetuning_config["batch_size"]).to(device)
-
-       # if finetuning_config["validate"]:
-       #     if not self.plotter:
-       #         self.plotter = VisdomLinePlotter(env_name='training')
-       #     validation_boxes = self.generate_training_set_regression(self.pos, finetuning_config["max_displacement"],
-       #     finetuning_config["val_batch_size"]).to(device)
-        #print("Finetuning track {}".format(self.id))
         save_state_box_predictor = FastRCNNPredictor(1024, 2).to(device)
         save_state_box_predictor.load_state_dict(self.box_predictor_regression.state_dict())
 
@@ -280,15 +253,11 @@ class Track(object):
         for i in range(int(finetuning_config["iterations"])):
             for i_sample, sample_batch in enumerate(dataloader):
                 if finetuning_config["validation_over_time"]:
-                    # if not self.plotter:
-                    #     self.plotter = VisdomLinePlotter(env_name='validation_over_time')
-                    #     print("Making Plotter")
                     if np.mod(i + 1, finetuning_config["checkpoint_interval"]) == 0:
                         self.box_predictor_regression.eval()
                         save_state_box_predictor = FastRCNNPredictor(1024, 2).to(device)
                         save_state_box_predictor.load_state_dict(self.box_predictor_regression.state_dict())
                         self.checkpoints[i + 1] = [self.box_head_regression, save_state_box_predictor]
-                        # input('Checkpoints are the same: {} {}'.format(i+1, Tracker.compare_weights(self.box_predictor_regression, self.checkpoints[0][1])))
                         self.box_predictor_regression.train()
 
                 optimizer.zero_grad()
@@ -297,8 +266,6 @@ class Track(object):
                                                                 eval=False)
                 loss.backward()
                 optimizer.step()
-                #scheduler.step()
         self.box_predictor_regression.eval()
         self.box_head_regression.eval()
         self.training_set_classification = torch.tensor([])
-        self.training_set_regression.features = [] # only for current experiment where training set is reinitialized

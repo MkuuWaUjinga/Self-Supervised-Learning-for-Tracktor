@@ -24,7 +24,7 @@ class Tracker:
     # only track pedestrian
     cl = 1
 
-    def __init__(self, obj_detect, reid_network, tracker_cfg, sequence_number=00):
+    def __init__(self, obj_detect, reid_network, tracker_cfg):
         self.obj_detect = obj_detect
         self.reid_network = reid_network
         self.detection_person_thresh = tracker_cfg['detection_person_thresh']
@@ -57,7 +57,6 @@ class Tracker:
 
     def set_ground_truth(self, seq_string):
         sequence_number = seq_string[6:8]
-        #if self.finetuning_config["validation_over_time"]:
         self.ground_truth = pd.read_csv(f'./data/MOT17Labels/train/MOT17-{sequence_number}-FRCNN/gt/gt.txt',
                                         header=None, sep=',')
     def reset(self, hard=True):
@@ -82,8 +81,6 @@ class Tracker:
                     t.finetune_classification(self.finetuning_config, box_head_copy_for_classifier,
                                                    box_predictor_copy_for_classifier, early_stopping=False)
                     t.use_for_finetuning = True
-#            pickle.dump(t.training_set,
-#                        open("training_set/feature_training_set_track_{}.pkl".format(t.id), "wb"))
 
         self.inactive_tracks += tracks
 
@@ -661,20 +658,7 @@ class Tracker:
 
         self.im_index += 1
         self.last_image = blob['img'][0]
-        # if frame == 599:
-        #     for t in self.tracks:
-        #         pickle.dump(t.training_set, open("training_set/feature_training_set_track_{}.pkl".format(t.id), "wb"))
 
     def get_results(self):
         return self.results
 
-#                    idf1       idp       idr    recall  precision  num_unique_objects  mostly_tracked  partially_tracked  mostly_lost  num_false_positives  num_misses  num_switches  num_fragmentations      mota      motp
-#MOT17-02-FRCNN  0.458597  0.784569  0.323987  0.411980   0.997654                  62               8                 32           22                   18       10926            57                  65  0.407944  0.079305
-#MOT17-04-FRCNN  0.712063  0.904892  0.586980  0.647265   0.997828                  83              32                 29           22                   67       16775            21                  28  0.645415  0.095695
-#MOT17-05-FRCNN  0.633866  0.859832  0.501952  0.573804   0.982912                 133              32                 65           36                   69        2948            38                  60  0.558335  0.142563
-#MOT17-09-FRCNN  0.536235  0.681831  0.441878  0.641878   0.990438                  26              11                 13            2                   33        1907            23                  31  0.631362  0.086603
-#MOT17-10-FRCNN  0.653085  0.768088  0.568035  0.723810   0.978726                  57              28                 26            3                  202        3546            66                 119  0.702936  0.145639
-#MOT17-11-FRCNN  0.632742  0.770061  0.536986  0.690229   0.989818                  75              24                 33           18                   67        2923            26                  25  0.680373  0.081523
-#MOT17-13-FRCNN  0.726847  0.840207  0.640440  0.741797   0.973180                 110              59                 40           11                  238        3006            59                  84  0.716286  0.130974
-#OVERALL         0.650191  0.839572  0.530522  0.625716   0.990220                 546             194                238          114                  694       42031           290                 412  0.616953  0.105742
-#
