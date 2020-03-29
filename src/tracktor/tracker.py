@@ -222,7 +222,7 @@ class Tracker:
                     if len(scores.size()) == 1:
                         scores = scores.unsqueeze(1)
                     score_matrix = torch.cat([score_matrix, scores], dim=1)
-            print(f'Score matrix: {score_matrix}')
+            #print(f'Score matrix: {score_matrix}')
 
             for track_index in range(len(self.inactive_tracks)):
 
@@ -241,7 +241,7 @@ class Tracker:
                     candidate = candidates[0]
                     inactive_track = candidate[0]
                     self.tracks.append(inactive_track)
-                    print(f"Reidying track {inactive_track.id} in frame {frame} with score {candidate[1]}")
+                    #print(f"Reidying track {inactive_track.id} in frame {frame} with score {candidate[1]}")
                     inactive_track.count_inactive = 0
                     inactive_track.pos = new_det_pos[det_index].view(1, -1)
                     inactive_track.reset_last_pos()

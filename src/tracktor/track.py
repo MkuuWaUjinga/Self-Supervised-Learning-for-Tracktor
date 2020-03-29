@@ -198,7 +198,7 @@ class Track(object):
                                  i, score.cpu().numpy())
 
             if early_stopping and torch.min(positive_scores) > 0.99 and torch.min(positive_scores) - torch.max(negative_scores) > 0.99:
-                print(f"Stopping early after {i+1} iterations. max pos: {torch.min(positive_scores)}, max neg: {torch.max(negative_scores)}")
+                #print(f"Stopping early after {i+1} iterations. max pos: {torch.min(positive_scores)}, max neg: {torch.max(negative_scores)}")
                 break
 
 
