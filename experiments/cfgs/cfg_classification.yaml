@@ -2,6 +2,12 @@ tracktor:
   'dataset': mot17_train_FRCNN17
   'write_images': False
   'tracker':
+    motion_model:
+      enabled: True
+      # average velocity over last n_steps steps
+      n_steps: 5
+      # if true, only model the movement of the bounding box center. If false, width and height are also modeled.
+      center_only: False
     'inactive_patience': 10
     reid_siamese: False
     'finetuning':

@@ -396,6 +396,10 @@ class Tracker:
                 if t.last_v.nelement() > 0:
                     self.motion_step(t)
 
+        if self.finetuning_config['for_reid']:
+            for t in self.inactive_tracks:
+                if t.last_v.nelement() > 0:
+                    self.motion_step(t)
 
     def step(self, blob, frame=1):
         """This function should be called every timestep to perform tracking with a blob
