@@ -362,6 +362,10 @@ class Tracker:
                 for t in self.inactive_tracks:
                     t.pos = warp_pos(t.pos, warp_matrix)
 
+            if self.finetuning_config['for_reid']:
+                for t in self.inactive_tracks:
+                    t.pos = warp_pos(t.pos, warp_matrix)
+
             if self.motion_model_cfg['enabled']:
                 for t in self.tracks:
                     for i in range(len(t.last_pos)):
