@@ -1,4 +1,5 @@
-ADL4CV project (IN-2364) with @CHeckingV. Improving Tracktor by self-supervised fine-tuning of the object detector's heads to each tracked person.
+## ADL4CV project (IN-2364) with @CHeckingV 
+Improving Tracktor by self-supervised fine-tuning of the object detector's heads to each tracked person.
 Consult the [report](https://github.com/MkuuWaUjinga/Self-Supervised-Learning-for-Tracktor/blob/master/report.pdf) for details.
 
 ## Experiments with fine-tuning
