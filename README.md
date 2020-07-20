@@ -1,10 +1,5 @@
-# Tracking without bells and whistles
-
-This repository provides the implementation of our paper **Tracking without bells and whistles** (Philipp Bergmann, [Tim Meinhardt](https://dvl.in.tum.de/team/meinhardt/), [Laura Leal-Taixe](https://dvl.in.tum.de/team/lealtaixe/)) [https://arxiv.org/abs/1903.05625]. This branch includes an updated version of Tracktor for PyTorch 1.X with an improved object detector. The original results of the paper were produced with the code in the `iccv_19` branch.
-
-In addition to our supplementary document, we provide an illustrative [web-video-collection](https://vision.in.tum.de/webshare/u/meinhard/tracking_wo_bnw-supp_video_collection.zip). The collection includes examplary Tracktor++ tracking results and multiple video examples to accompany our analysis of state-of-the-art tracking methods.
-
-![Visualization of Tracktor](data/method_vis_standalone.png)
+ADL4CV project (IN-2364) with @CHeckingV. Improving Tracktor by self-supervised fine-tuning of the object detector's heads to each tracked person.
+Consult the (report)[https://github.com/MkuuWaUjinga/Self-Supervised-Learning-for-Tracktor/blob/master/report.pdf] for details.
 
 ## Experiments with fine-tuning
 
@@ -20,6 +15,16 @@ To run the experiment for regression go to the branch reproduce-regression and r
   python experiments/scripts/finetune_tacktor.py with cfg_regression
   python experiments/scripts/finetune_tacktor.py with cfg_regression_collect_training_set
   ```
+
+# Tracking without bells and whistles
+
+This repository provides the implementation of our paper **Tracking without bells and whistles** (Philipp Bergmann, [Tim Meinhardt](https://dvl.in.tum.de/team/meinhardt/), [Laura Leal-Taixe](https://dvl.in.tum.de/team/lealtaixe/)) [https://arxiv.org/abs/1903.05625]. This branch includes an updated version of Tracktor for PyTorch 1.X with an improved object detector. The original results of the paper were produced with the code in the `iccv_19` branch.
+
+In addition to our supplementary document, we provide an illustrative [web-video-collection](https://vision.in.tum.de/webshare/u/meinhard/tracking_wo_bnw-supp_video_collection.zip). The collection includes examplary Tracktor++ tracking results and multiple video examples to accompany our analysis of state-of-the-art tracking methods.
+
+![Visualization of Tracktor](data/method_vis_standalone.png)
+
+
 ## Installation
 
 1. Clone and enter this repository:
